@@ -42,7 +42,7 @@ A real-time AI model comparison platform that allows users to submit a single pr
 ### 1. Clone the Repository
 
 ```bash
-git clone <repository-url>
+git clone https://github.com/joseph123019/ai-model-playground.git
 cd ai-model-playground/Development
 ```
 
