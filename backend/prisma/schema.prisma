@@ -9,7 +9,7 @@ generator client {
 }
 
 datasource db {
-  provider = "sqlite"
+  provider = "postgresql"
   url      = env("DATABASE_URL")
 }
 
@@ -41,6 +41,8 @@ model Response {
   tokens    Int?
   cost      Float?
   status    String
+  duration  Int?     // Response time in milliseconds
+  createdAt DateTime @default(now())
   sessionId String
   session   Session @relation(fields: [sessionId], references: [id])
 }
