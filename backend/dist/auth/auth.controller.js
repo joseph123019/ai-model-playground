@@ -84,7 +84,8 @@ let AuthController = class AuthController {
             }
             const result = await this.authService.googleLogin(googleUser.googleId, googleUser.email, googleUser.name || undefined);
             const frontendUrl = process.env.FRONTEND_URL || 'http://localhost:3000';
-            res.redirect(`${frontendUrl}/auth/google/success?token=${result.access_token}`);
+            const userData = encodeURIComponent(JSON.stringify(result.user));
+            res.redirect(`${frontendUrl}/auth/google/success?token=${result.access_token}&user=${userData}`);
         }
         catch (error) {
             const frontendUrl = process.env.FRONTEND_URL || 'http://localhost:3000';

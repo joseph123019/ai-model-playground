@@ -75,9 +75,10 @@ export class AuthController {
         googleUser.name || undefined,
       );
       
-      // Redirect to frontend with token
+      // Redirect to frontend with token and user data
       const frontendUrl = process.env.FRONTEND_URL || 'http://localhost:3000';
-      res.redirect(`${frontendUrl}/auth/google/success?token=${result.access_token}`);
+      const userData = encodeURIComponent(JSON.stringify(result.user));
+      res.redirect(`${frontendUrl}/auth/google/success?token=${result.access_token}&user=${userData}`);
     } catch (error) {
       const frontendUrl = process.env.FRONTEND_URL || 'http://localhost:3000';
       res.redirect(`${frontendUrl}/auth/google/error?message=${error.message}`);
