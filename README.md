@@ -107,6 +107,13 @@ DATABASE_URL=your_postgresql_connection_string
 JWT_SECRET=your_jwt_secret_key
 FRONTEND_URL=http://localhost:3000
 PORT=4000
+
+# Gmail API Configuration
+GMAIL_CLIENT_ID=your_gmail_client_id
+GMAIL_CLIENT_SECRET=your_gmail_client_secret
+GMAIL_REDIRECT_URI=http://localhost:4000/auth/google/callback
+GMAIL_REFRESH_TOKEN=your_gmail_refresh_token
+GMAIL_USER=your_email@gmail.com
 ```
 
 ### Frontend (.env.local)
@@ -235,6 +242,147 @@ For support, please open an issue in the GitHub repository or contact the develo
 ## 🔗 Live Demo
 
 [Deploy your own instance using the deployment instructions above]
+
+---
+
+## 🔐 Google OAuth Setup Guide
+
+### Current Status
+✅ Google OAuth credentials are configured in `.env`
+✅ Backend OAuth service implemented
+✅ Frontend login button configured
+
+### Troubleshooting "Sign in with Google not working"
+
+#### 1. Verify Google Cloud Console Setup
+
+Go to [Google Cloud Console](https://console.cloud.google.com/):
+
+**OAuth Consent Screen:**
+1. Go to **APIs & Services** → **OAuth consent screen**
+2. Make sure your app is configured:
+   - **User Type**: External (for testing) or Internal (if using Workspace)
+   - **App name**: AI Model Playground
+   - **Support email**: Your email
+   - **Scopes**: Add these scopes:
+     - `userinfo.email`
+     - `userinfo.profile`
+   - **Test users**: Add your email if in Testing mode
+
+**OAuth 2.0 Client ID:**
+1. Go to **APIs & Services** → **Credentials**
+2. Find your OAuth 2.0 Client ID
+3. Click **Edit** and verify:
+   
+   **Authorized JavaScript origins:**
+   ```
+   http://localhost:3000
+   http://localhost:4000
+   ```
+   
+   **Authorized redirect URIs:**
+   ```
+   http://localhost:4000/auth/google/callback
+   ```
+
+#### 2. Current Configuration
+
+**Backend `.env`:**
+```env
+GOOGLE_CLIENT_ID="your-google-client-id.apps.googleusercontent.com"
+GOOGLE_CLIENT_SECRET="your-google-client-secret"
+GOOGLE_CALLBACK_URL="http://localhost:4000/auth/google/callback"
+```
+
+#### 3. Test the Google OAuth Flow
+
+1. **Start Backend:**
+   ```bash
+   cd Development/backend
+   npm run start:dev
+   ```
+
+2. **Start Frontend:**
+   ```bash
+   cd Development/frontend
+   npm run dev
+   ```
+
+3. **Test Google Login:**
+   - Go to http://localhost:3000/login
+   - Click "Sign in with Google"
+   - You should be redirected to Google's OAuth consent screen
+   - After approval, you'll be redirected back to the app
+
+#### 4. Common Google OAuth Issues
+
+**Issue: "Error 400: redirect_uri_mismatch"**
+- **Solution:** Make sure the callback URL in Google Cloud Console exactly matches:
+  ```
+  http://localhost:4000/auth/google/callback
+  ```
+
+**Issue: "Error 403: access_denied"**
+- **Solution:** 
+  - Add your email to "Test users" in OAuth consent screen
+  - Or publish the app (not recommended for development)
+
+**Issue: "Google authentication failed: Missing required user information"**
+- **Solution:** Make sure these scopes are requested:
+  - `https://www.googleapis.com/auth/userinfo.email`
+  - `https://www.googleapis.com/auth/userinfo.profile`
+
+**Issue: Button doesn't redirect**
+- **Solution:** Check browser console for errors and verify frontend redirects to:
+  ```
+  http://localhost:4000/auth/google
+  ```
+
+#### 5. Google OAuth Backend Endpoints
+
+| Endpoint | Method | Description |
+|----------|--------|-------------|
+| `/auth/google` | GET | Initiates Google OAuth flow |
+| `/auth/google/callback` | GET | Handles Google callback with code |
+
+#### 6. Google OAuth Frontend Routes
+
+| Route | Description |
+|-------|-------------|
+| `/login` | Login page with Google button |
+| `/auth/google/success` | Success handler (receives token) |
+| `/auth/google/error` | Error handler |
+
+#### 7. How Google OAuth Works
+
+1. User clicks "Sign in with Google"
+2. Frontend redirects to: `http://localhost:4000/auth/google`
+3. Backend redirects to Google OAuth consent screen
+4. User approves
+5. Google redirects back to: `http://localhost:4000/auth/google/callback?code=...`
+6. Backend exchanges code for user info
+7. Backend creates/updates user in database
+8. Backend generates JWT token
+9. Backend redirects to: `http://localhost:3000/auth/google/success?token=...&user=...`
+10. Frontend stores token and redirects to playground
+
+#### 8. Quick Fix Checklist
+
+- [ ] Backend is running on port 4000
+- [ ] Frontend is running on port 3000
+- [ ] Google Cloud Console has correct redirect URI
+- [ ] Test user is added to OAuth consent screen
+- [ ] Environment variables are loaded (restart servers)
+- [ ] Browser allows cookies (Google OAuth requires them)
+
+#### 9. Alternative: Test Without Google OAuth
+
+If Google OAuth setup is complex, you can use email/password registration:
+1. Go to `/register`
+2. Create account with email
+3. Check email for activation link
+4. Activate account
+5. Login with email/password
 
 ---
 
