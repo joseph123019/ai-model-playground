@@ -1,3 +1,25 @@
+🔗 **[Live Demo](https://ai-playground.irsolutions.ca/)**
+
+## 📑 Table of Contents
+- [Features](#-features)
+- [Architecture](#️-architecture)
+- [Prerequisites](#-prerequisites)
+- [Setup Instructions](#️-setup-instructions)
+- [Environment Variables](#-environment-variables)
+- [Deployment](#-deployment)
+- [API Endpoints](#-api-endpoints)
+- [Database Schema](#️-database-schema)
+- [Security Features](#-security-features)
+- [Testing](#-testing)
+- [Performance Considerations](#-performance-considerations)
+- [Contributing](#-contributing)
+- [License](#-license)
+- [Support](#-support)
+- [Live Demo](#-live-demo)
+- [Google OAuth Setup Guide](#-google-oauth-setup-guide)
+
+---
+
 # AI Model Playground
 
 A real-time AI model comparison platform that allows users to submit a single prompt and see responses from multiple AI models side-by-side with live streaming, performance metrics, and cost analysis.
