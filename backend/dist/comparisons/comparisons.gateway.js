@@ -19,6 +19,7 @@ const jwt_1 = require("@nestjs/jwt");
 const prisma_service_1 = require("../prisma/prisma.service");
 const openai_service_1 = require("../services/openai.service");
 const anthropic_service_1 = require("../services/anthropic.service");
+const model_selector_1 = require("../utils/model-selector");
 let ComparisonsGateway = class ComparisonsGateway {
     jwtService;
     prisma;
@@ -33,8 +34,10 @@ let ComparisonsGateway = class ComparisonsGateway {
     }
     async handleConnection(client) {
         try {
+            console.log('🔌 New WebSocket connection attempt');
             const token = client.handshake.auth?.token || client.handshake.headers?.authorization?.replace('Bearer ', '');
             if (!token) {
+                console.log('❌ No token provided, disconnecting');
                 client.disconnect();
                 return;
             }
@@ -43,6 +46,7 @@ let ComparisonsGateway = class ComparisonsGateway {
                 where: { id: payload.sub },
             });
             if (!user) {
+                console.log('❌ User not found, disconnecting');
                 client.disconnect();
                 return;
             }
@@ -50,10 +54,10 @@ let ComparisonsGateway = class ComparisonsGateway {
                 id: user.id,
                 email: user.email,
             };
-            console.log(`User ${user.email} connected`);
+            console.log(`✅ User ${user.email} connected (Socket ID: ${client.id})`);
         }
         catch (error) {
-            console.error('Authentication error:', error);
+            console.error('❌ Authentication error:', error.message);
             client.disconnect();
         }
     }
@@ -67,7 +71,7 @@ let ComparisonsGateway = class ComparisonsGateway {
             client.emit('error', { message: 'Unauthorized' });
             return;
         }
-        const { prompt } = data;
+        const { prompt, selectionMode = 'cheapest', manualModels } = data;
         if (!prompt?.trim()) {
             client.emit('error', { message: 'Prompt is required' });
             return;
@@ -80,11 +84,13 @@ let ComparisonsGateway = class ComparisonsGateway {
                 },
             });
             client.emit('sessionCreated', { sessionId: session.id });
+            const modelPair = (0, model_selector_1.getModelPair)(selectionMode, manualModels);
             const models = [
-                { service: this.openaiService, model: 'gpt-4o', name: 'GPT-4o' },
-                { service: this.anthropicService, model: 'claude-3-5-sonnet-20241022', name: 'Claude 3.5 Sonnet' },
+                { service: this.openaiService, model: modelPair.openai.id, name: modelPair.openai.displayName },
+                { service: this.anthropicService, model: modelPair.anthropic.id, name: modelPair.anthropic.displayName },
             ];
             const responses = await Promise.allSettled(models.map(async ({ service, model, name }) => {
+                const startTime = Date.now();
                 const response = await this.prisma.response.create({
                     data: {
                         model: name,
@@ -99,7 +105,9 @@ let ComparisonsGateway = class ComparisonsGateway {
                     responseId: response.id,
                 });
                 try {
+                    let lastChunk = null;
                     for await (const chunk of service.streamResponse(prompt, model)) {
+                        lastChunk = chunk;
                         await this.prisma.response.update({
                             where: { id: response.id },
                             data: {
@@ -117,21 +125,33 @@ let ComparisonsGateway = class ComparisonsGateway {
                             responseId: response.id,
                         });
                     }
+                    const duration = Date.now() - startTime;
                     await this.prisma.response.update({
                         where: { id: response.id },
-                        data: { status: 'complete' },
+                        data: {
+                            status: 'complete',
+                            duration,
+                            content: lastChunk?.content || '',
+                            tokens: lastChunk?.tokens || 0,
+                            cost: lastChunk?.cost || 0,
+                        },
                     });
                     client.emit('statusUpdate', {
                         model: name,
                         status: 'complete',
                         responseId: response.id,
+                        duration,
                     });
-                    return { model: name, success: true };
+                    return { model: name, success: true, duration };
                 }
                 catch (error) {
+                    const duration = Date.now() - startTime;
                     await this.prisma.response.update({
                         where: { id: response.id },
-                        data: { status: 'error' },
+                        data: {
+                            status: 'error',
+                            duration,
+                        },
                     });
                     client.emit('statusUpdate', {
                         model: name,
@@ -150,14 +170,25 @@ let ComparisonsGateway = class ComparisonsGateway {
                 include: { responses: true },
             });
             if (sessionWithResponses) {
+                const responsesData = sessionWithResponses.responses.map((r) => ({
+                    model: r.model,
+                    tokens: r.tokens,
+                    cost: r.cost,
+                    status: r.status,
+                    duration: r.duration,
+                }));
+                const totalTokens = responsesData.reduce((sum, r) => sum + (r.tokens || 0), 0);
+                const totalCost = responsesData.reduce((sum, r) => sum + (r.cost || 0), 0);
+                const fastestModel = responsesData.reduce((fastest, r) => (r.duration && (!fastest.duration || r.duration < fastest.duration)) ? r : fastest, responsesData[0]);
                 client.emit('finalMetrics', {
                     sessionId: session.id,
-                    responses: sessionWithResponses.responses.map((r) => ({
-                        model: r.model,
-                        tokens: r.tokens,
-                        cost: r.cost,
-                        status: r.status,
-                    })),
+                    responses: responsesData,
+                    totals: {
+                        tokens: totalTokens,
+                        cost: totalCost,
+                        fastestModel: fastestModel.model,
+                        fastestDuration: fastestModel.duration,
+                    },
                 });
             }
         }

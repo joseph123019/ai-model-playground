@@ -4,6 +4,7 @@ import { JwtService } from '@nestjs/jwt';
 import { PrismaService } from '../prisma/prisma.service';
 import { OpenaiService } from '../services/openai.service';
 import { AnthropicService } from '../services/anthropic.service';
+import { SelectionMode } from '../utils/model-selector';
 interface AuthenticatedSocket extends Socket {
     user?: {
         id: string;
@@ -21,6 +22,11 @@ export declare class ComparisonsGateway implements OnGatewayConnection, OnGatewa
     handleDisconnect(client: AuthenticatedSocket): void;
     handleStartComparison(data: {
         prompt: string;
+        selectionMode?: SelectionMode;
+        manualModels?: {
+            openai?: string;
+            anthropic?: string;
+        };
     }, client: AuthenticatedSocket): Promise<void>;
 }
 export {};
