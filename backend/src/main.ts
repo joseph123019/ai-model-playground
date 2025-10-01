@@ -7,9 +7,13 @@ async function bootstrap() {
     logger: ['error', 'warn', 'log', 'debug'],
   });
   
-  // Enable CORS
+  // Enable CORS with dynamic origins
+  const corsOrigins = process.env.CORS_ORIGINS
+    ? process.env.CORS_ORIGINS.split(',').map(origin => origin.trim().replace(/\/$/, ''))
+    : ['http://localhost:3000'];
+  
   app.enableCors({
-    origin: process.env.FRONTEND_URL || 'http://localhost:3000',
+    origin: corsOrigins,
     credentials: true,
   });
   
