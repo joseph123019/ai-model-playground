@@ -7,6 +7,14 @@ export declare const MODEL_COSTS: {
         input: number;
         output: number;
     };
+    'claude-sonnet-4-20250514': {
+        input: number;
+        output: number;
+    };
+    'claude-opus-4-20250514': {
+        input: number;
+        output: number;
+    };
     'claude-3-5-sonnet-20241022': {
         input: number;
         output: number;
@@ -15,15 +23,7 @@ export declare const MODEL_COSTS: {
         input: number;
         output: number;
     };
-    'claude-3-opus-20240229': {
-        input: number;
-        output: number;
-    };
-    'claude-3-sonnet-20240229': {
-        input: number;
-        output: number;
-    };
-    'claude-3-haiku-20240307': {
+    'claude-opus-4-1-20250805': {
         input: number;
         output: number;
     };
