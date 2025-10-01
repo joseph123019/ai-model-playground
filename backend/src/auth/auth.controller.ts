@@ -77,6 +77,8 @@ export class AuthController {
       
       // Redirect to frontend with token and user data
       const frontendUrl = process.env.FRONTEND_URL || 'http://localhost:3000';
+      console.log('🔗 Google OAuth redirect to:', frontendUrl);
+      console.log('📝 FRONTEND_URL env var:', process.env.FRONTEND_URL);
       const userData = encodeURIComponent(JSON.stringify(result.user));
       res.redirect(`${frontendUrl}/auth/google/success?token=${result.access_token}&user=${userData}`);
     } catch (error) {
