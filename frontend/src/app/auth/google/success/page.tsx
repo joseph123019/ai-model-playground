@@ -10,23 +10,31 @@ function GoogleSuccessContent() {
   const { login } = useAuth();
   
   useEffect(() => {
+    console.log('🔍 Google success page loaded');
     const token = searchParams.get('token');
     const userData = searchParams.get('user');
+    
+    console.log('📝 Token exists:', !!token);
+    console.log('👤 User data exists:', !!userData);
     
     if (token && userData) {
       try {
         const user = JSON.parse(decodeURIComponent(userData));
+        console.log('✅ User parsed:', user.email);
         login(token, user);
+        console.log('✅ Login successful, redirecting to home...');
       } catch (error) {
-        console.error('Failed to parse user data:', error);
+        console.error('❌ Failed to parse user data:', error);
         localStorage.setItem('token', token);
       }
       
       // Redirect to home
       setTimeout(() => {
+        console.log('🔄 Redirecting to /');
         router.push('/');
       }, 1000);
     } else {
+      console.log('⚠️ Missing token or user data, redirecting to login');
       router.push('/login');
     }
   }, [searchParams, router, login]);
